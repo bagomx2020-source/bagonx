@@ -18,7 +18,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Instalar librerías de la Switch
-        run: dkp-pacman -Sy --noconfirm --needed switch-sdl2 switch-sdl2_ttf switch-freetype switch-curl switch-zlib
+        # La imagen ya trae estas librerías; si el servidor de devkitPro falla, se sigue con las de la imagen.
+        run: |
+          PKGS="switch-sdl2 switch-sdl2_ttf switch-freetype switch-curl switch-zlib"
+          dkp-pacman -Sy --noconfirm --needed $PKGS || dkp-pacman -Q $PKGS
 
       - name: Compilar
         run: make -j"$(nproc)" UPDATE_REPO="${{ github.repository }}"
