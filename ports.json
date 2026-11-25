@@ -117,6 +117,19 @@
       "check": "sdmc:/switch/quakespasm/quakespasmnx.nro",
       "needs_data": true,
       "desc": "Motor de Quake. Copia la carpeta id1 de tu juego (sirve la shareware con pak0.pak) en /switch/quakespasm/id1/."
+    },
+    {
+      "id": "manhunt1",
+      "title": "Manhunt",
+      "system": "Xbox",
+      "author": "marmota94",
+      "repo": "marmota94/manhunt1_nx",
+      "asset": "manhunt1-nx-v*.zip",
+      "type": "zip",
+      "dest": "sdmc:/",
+      "check": "sdmc:/switch/manhunt1_nx/manhunt.nro",
+      "needs_data": true,
+      "desc": "Recompilación nativa del Manhunt de Xbox. Copia DEFAULT.xbe y las carpetas audio y levels de tu copia original en /switch/manhunt1_nx/game/. Ábrelo con R pulsado sobre un juego (necesita toda la memoria). Para salir: ZL + ZR + Más + Menos durante 1,5 s."
     }
   ]
 }
