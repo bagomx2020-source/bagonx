@@ -1,0 +1,122 @@
+{
+  "_info": "Catálogo de ports de BagoNX. Solo motores y juegos libres de GitHub, sacados de https://github.com/robzilla10001/SwitchPorts. La app descarga siempre la última release de cada repositorio. type: nro (se copia en dest) o zip (se extrae en dest). needs_data: el usuario pone los archivos de su copia original del juego.",
+  "ports": [
+    {
+      "id": "supermariowar",
+      "title": "Super Mario War",
+      "system": "PC",
+      "author": "brendongl",
+      "repo": "brendongl/supermariowar-nx",
+      "asset": "SuperMarioWar-NX-v*.zip",
+      "type": "zip",
+      "dest": "sdmc:/",
+      "check": "sdmc:/switch/supermariowar/smw.nro",
+      "needs_data": false,
+      "desc": "Juego de fans gratuito: batallas de hasta 4 jugadores en local a 60 fps. Funciona tal cual, no hace falta nada más."
+    },
+    {
+      "id": "mari0",
+      "title": "Mari0",
+      "system": "PC",
+      "author": "delsonazevedo",
+      "repo": "delsonazevedo/mari0-switch",
+      "asset": "Mari0.nro",
+      "type": "nro",
+      "dest": "sdmc:/switch/mari0/Mari0.nro",
+      "check": "sdmc:/switch/mari0/Mari0.nro",
+      "needs_data": false,
+      "desc": "Juego de fans gratuito que mezcla plataformas clásicas con la pistola de portales. Funciona tal cual."
+    },
+    {
+      "id": "mari0_ae",
+      "title": "Mari0: Alesan99's Entities",
+      "system": "PC",
+      "author": "aks796",
+      "repo": "aks796/mari0_ae_nx",
+      "asset": "mari0_ae_nx.nro",
+      "type": "nro",
+      "dest": "sdmc:/switch/mari0_ae/mari0_ae_nx.nro",
+      "check": "sdmc:/switch/mari0_ae/mari0_ae_nx.nro",
+      "needs_data": false,
+      "desc": "Versión ampliada de Mari0 con muchas más entidades y editor de niveles. Gratuito, funciona tal cual."
+    },
+    {
+      "id": "nzportable",
+      "title": "Nazi Zombies: Portable",
+      "system": "PC",
+      "author": "NZP-Team",
+      "repo": "nzp-team/nzportable",
+      "asset": "nzportable-switch.zip",
+      "type": "zip",
+      "dest": "sdmc:/switch/",
+      "check": "sdmc:/switch/nzportable/nzportable.nro",
+      "needs_data": false,
+      "desc": "Modo zombis por oleadas hecho con el motor de Quake. Proyecto libre con todo incluido; se instala en /switch/nzportable/."
+    },
+    {
+      "id": "luanti",
+      "title": "Luanti",
+      "system": "PC",
+      "author": "adumah",
+      "repo": "adumah/Luanti-NX",
+      "asset": "Luanti-NX-*.zip",
+      "type": "zip",
+      "dest": "sdmc:/",
+      "check": "sdmc:/switch/luanti/luanti.nro",
+      "needs_data": false,
+      "desc": "Motor de mundos de bloques libre (antes Minetest). Incluye un juego base; se instala en /switch/luanti/."
+    },
+    {
+      "id": "megamanw",
+      "title": "Mega Man W",
+      "system": "PC",
+      "author": "Vroccolli",
+      "repo": "Vroccolli/mega-man-w-switch-homebrew",
+      "asset": "*SD-card.zip",
+      "type": "zip",
+      "dest": "sdmc:/",
+      "check": "sdmc:/switch/Mega Man W/Mega Man W.nro",
+      "needs_data": false,
+      "desc": "Juego de fans gratuito. Se instala en /switch/Mega Man W/."
+    },
+    {
+      "id": "fheroes2",
+      "title": "Heroes of Might & Magic II (fheroes2)",
+      "system": "PC",
+      "author": "ihhub",
+      "repo": "ihhub/fheroes2",
+      "asset": "fheroes2_switch.zip",
+      "type": "zip",
+      "dest": "sdmc:/switch/fheroes2/",
+      "check": "sdmc:/switch/fheroes2/fheroes2.nro",
+      "needs_data": true,
+      "desc": "Motor libre de Heroes II. Copia las carpetas ANIM, DATA, MAPS y MUSIC de tu juego original en /switch/fheroes2/."
+    },
+    {
+      "id": "jazz2",
+      "title": "Jazz Jackrabbit 2",
+      "system": "PC",
+      "author": "deathkiller",
+      "repo": "deathkiller/jazz2",
+      "asset": "Jazz2_*_Switch.zip",
+      "type": "zip",
+      "dest": "sdmc:/switch/jazz2/",
+      "check": "sdmc:/switch/jazz2/Jazz2.nro",
+      "needs_data": true,
+      "desc": "Reimplementación libre del motor. Copia el contenido de tu Jazz Jackrabbit 2 original (sirve la versión shareware) en /Games/Jazz2/Source/ y ábrelo con toda la memoria."
+    },
+    {
+      "id": "quakespasm",
+      "title": "Quake (QuakeSpasm)",
+      "system": "PC",
+      "author": "Thorhax",
+      "repo": "Thorhax/Quakespasm-NX-Modern",
+      "asset": "quakespasmnx.nro",
+      "type": "nro",
+      "dest": "sdmc:/switch/quakespasm/quakespasmnx.nro",
+      "check": "sdmc:/switch/quakespasm/quakespasmnx.nro",
+      "needs_data": true,
+      "desc": "Motor de Quake. Copia la carpeta id1 de tu juego (sirve la shareware con pak0.pak) en /switch/quakespasm/id1/."
+    }
+  ]
+}

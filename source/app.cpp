@@ -14,6 +14,7 @@
 #include "config.hpp"
 #include "gfx.hpp"
 #include "i18n.hpp"
+#include "ports.hpp"
 #include "store.hpp"
 #include "task.hpp"
 #include "updater.hpp"
@@ -100,7 +101,7 @@ struct SysInfo {
     bool applet = false;
 };
 
-enum { TAB_CFW, TAB_APPS, TAB_SETTINGS, TAB_ABOUT, TAB_COUNT };
+enum { TAB_CFW, TAB_APPS, TAB_PORTS, TAB_SETTINGS, TAB_ABOUT, TAB_COUNT };
 enum { STORE_IDLE, STORE_LOADING, STORE_OK, STORE_ERROR };
 
 const char* kCats[] = {"", "game", "emu", "tool", "advanced", "theme", "aesthetics", "concept", "misc", "legacy"};
@@ -123,6 +124,10 @@ int g_storeState = STORE_IDLE;
 std::string g_storeErr;
 int g_cat = 0;
 std::string g_search;
+
+std::vector<ports::Port> g_ports;
+int g_portsState = STORE_IDLE;
+std::string g_portsErr;
 
 // ---------------------------------------------------------------- utilidades de UI
 void showDialog(const std::string& title, const std::string& body, std::vector<std::string> buttons,
@@ -344,6 +349,75 @@ void buildApps() {
     if (g_items.empty()) addInfo(tr("no_results"), "");
 }
 
+// ---------------------------------------------------------------- ports
+void loadPorts() {
+    if (g_task) return;
+    g_portsState = STORE_LOADING;
+    auto result = std::make_shared<std::vector<ports::Port>>();
+    std::string repo = cfg().updateRepo;
+    startTask(tr("loading_ports"),
+              [result, repo](TaskCtx& c, std::string& m) {
+                  c.setStatus(tr("loading_ports"));
+                  return ports::fetch(repo, *result, m);
+              },
+              [result](bool ok, const std::string& m) {
+                  if (ok) { g_ports = std::move(*result); g_portsState = STORE_OK; }
+                  else { g_portsErr = m; g_portsState = STORE_ERROR; }
+                  g_dirty = true;
+              });
+}
+
+void installPort(size_t idx) {
+    ports::Port p = g_ports[idx];
+    startTask(p.title, [p](TaskCtx& c, std::string& m) { return ports::install(p, c, m); },
+              [](bool ok, const std::string& m) {
+                  ports::refreshInstalled(g_ports);
+                  refreshSys();
+                  g_dirty = true;
+                  showMessage(ok ? tr("done") : tr("error"), m);
+              });
+}
+
+void openPort(size_t idx) {
+    const ports::Port& p = g_ports[idx];
+    std::string body = p.desc;
+    if (p.needsData) body += "\n\n" + std::string(tr("port_data_warn"));
+    body += "\n\n" + std::string(tr("port_source")) + ": github.com/" + p.repo;
+    bool installed = !p.installedVer.empty();
+    if (installed) body += "\n" + std::string(tr("port_installed")) + ": " + p.installedVer;
+    showDialog(p.title + "  ·  " + p.author, body,
+               {installed ? tr("update") : tr("install"), tr("cancel")},
+               {[idx] { installPort(idx); }, nullptr});
+}
+
+void buildPorts() {
+    const Theme& t = T();
+    if (g_portsState == STORE_IDLE) loadPorts();
+    if (g_portsState == STORE_ERROR) {
+        addHeader(tr("ports_error"));
+        addInfo(g_portsErr, "");
+        addAction(tr("retry"), "", [] { loadPorts(); });
+        return;
+    }
+    if (g_portsState != STORE_OK) return;
+    for (int pass = 0; pass < 2; pass++) {
+        bool data = pass == 1;
+        bool header = false;
+        for (size_t i = 0; i < g_ports.size(); i++) {
+            const ports::Port& p = g_ports[i];
+            if (p.needsData != data) continue;
+            if (!header) { addHeader(data ? tr("port_data_hdr") : tr("port_ready_hdr")); header = true; }
+            std::string sub = p.system + "  ·  " + p.author + "  ·  " +
+                              (data ? tr("port_needs_data") : tr("port_free"));
+            if (p.installedVer.empty())
+                addAction(p.title, sub, [i] { openPort(i); }, "GitHub");
+            else
+                addAction(p.title, sub, [i] { openPort(i); }, tr("port_installed") + std::string(" ") + p.installedVer, t.ok);
+        }
+    }
+    if (g_items.empty()) addInfo(tr("no_results"), "");
+}
+
 void checkUpdate() {
     std::string repo = cfg().updateRepo;
     if (repo.empty()) { showMessage(tr("updates"), tr("repo_not_set")); return; }
@@ -412,6 +486,7 @@ void rebuild() {
     switch (g_tab) {
         case TAB_CFW: buildCfw(); break;
         case TAB_APPS: buildApps(); break;
+        case TAB_PORTS: buildPorts(); break;
         case TAB_SETTINGS: buildSettings(); break;
         case TAB_ABOUT: buildAbout(); break;
     }
@@ -510,7 +585,7 @@ void drawSidebar() {
     gfx::rect(0, 0, 300, 720, t.side);
     gfx::text(APP_TITLE, 34, 34, 38, t.accent);
     gfx::text("v" APP_VERSION, 36, 84, 18, t.sub);
-    const char* tabs[TAB_COUNT] = {tr("tab_cfw"), tr("tab_apps"), tr("tab_settings"), tr("tab_about")};
+    const char* tabs[TAB_COUNT] = {tr("tab_cfw"), tr("tab_apps"), tr("tab_ports"), tr("tab_settings"), tr("tab_about")};
     for (int i = 0; i < TAB_COUNT; i++) {
         int y = 140 + i * 62;
         bool sel = i == g_tab;
@@ -583,7 +658,7 @@ void drawList() {
 
 void drawContent() {
     const Theme& t = T();
-    const char* titles[TAB_COUNT] = {tr("tab_cfw"), tr("tab_apps"), tr("tab_settings"), tr("tab_about")};
+    const char* titles[TAB_COUNT] = {tr("tab_cfw"), tr("tab_apps"), tr("tab_ports"), tr("tab_settings"), tr("tab_about")};
     gfx::text(titles[g_tab], 336, 34, 34, t.text);
     if (g_tab == TAB_APPS) {
         if (g_storeState == STORE_OK) {
@@ -595,6 +670,14 @@ void drawContent() {
             gfx::text(info, 338, 84, 18, t.sub, gfx::Left, 900);
         } else if (g_storeState == STORE_LOADING) {
             gfx::text(tr("loading_catalog"), 790, 360, 22, t.sub, gfx::Center);
+        }
+    }
+    if (g_tab == TAB_PORTS) {
+        if (g_portsState == STORE_OK) {
+            std::string info = util::fmt(tr("ports_count"), std::to_string(g_ports.size())) + "   ·   " + tr("ports_info");
+            gfx::text(info, 338, 84, 18, t.sub, gfx::Left, 900);
+        } else if (g_portsState == STORE_LOADING) {
+            gfx::text(tr("loading_ports"), 790, 360, 22, t.sub, gfx::Center);
         }
     }
     drawList();

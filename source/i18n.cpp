@@ -76,6 +76,22 @@ const Str kStrings[] = {
     {"version", "Versión", "Version"},
     {"size", "Tamaño", "Size"},
 
+    {"tab_ports", "Ports", "Ports"},
+    {"loading_ports", "Cargando la lista de ports…", "Loading the ports list…"},
+    {"ports_error", "No se pudo cargar la lista de ports", "Could not load the ports list"},
+    {"ports_count", "{} ports", "{} ports"},
+    {"ports_info", "Fuente: github.com/robzilla10001/SwitchPorts · se descarga la última release de cada port",
+                   "Source: github.com/robzilla10001/SwitchPorts · each port's latest release is downloaded"},
+    {"port_free", "Listo para jugar", "Ready to play"},
+    {"port_needs_data", "Necesita tus archivos del juego", "Needs your game files"},
+    {"port_ready_hdr", "Listos para jugar", "Ready to play"},
+    {"port_data_hdr", "Necesitan tus archivos del juego original", "Need files from your original game"},
+    {"port_done", "{} instalado.", "{} installed."},
+    {"port_installed", "Instalado", "Installed"},
+    {"port_source", "Origen", "Source"},
+    {"port_data_warn", "Este port no incluye el juego: solo el motor. Tienes que copiar tus propios archivos del juego original.",
+                       "This port does not include the game, only the engine. You must copy your own original game files."},
+
     {"language", "Idioma", "Language"},
     {"theme", "Tema", "Theme"},
     {"theme_dark", "Oscuro", "Dark"},
@@ -97,8 +113,8 @@ const Str kStrings[] = {
     {"mode_applet", "Applet (memoria limitada)", "Applet (limited memory)"},
     {"sd_free", "Espacio libre en la microSD", "Free microSD space"},
     {"credits", "Créditos", "Credits"},
-    {"credits_sub", "Atmosphère-NX · CTCaer (Hekate) · Homebrew App Store (fortheusers)",
-                    "Atmosphère-NX · CTCaer (Hekate) · Homebrew App Store (fortheusers)"},
+    {"credits_sub", "Atmosphère-NX · CTCaer (Hekate) · Homebrew App Store (fortheusers) · SwitchPorts (robzilla10001)",
+                    "Atmosphère-NX · CTCaer (Hekate) · Homebrew App Store (fortheusers) · SwitchPorts (robzilla10001)"},
 };
 
 bool g_english = false;
