@@ -13,6 +13,8 @@ struct Config {
     std::string lang = "es";
     std::string theme = "dark";
     std::string updateRepo = DEFAULT_UPDATE_REPO; // "usuario/repositorio" en GitHub
+    std::string pcAddr;  // IP del PC con bagonx_pc.py
+    std::string pcPin;
     bool autoUpdate = true;                       // comprobar al arrancar
 };
 

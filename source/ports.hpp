@@ -9,6 +9,8 @@ namespace ports {
 
 struct Port {
     std::string id, title, system, author, repo, asset, type, dest, check, desc;
+    std::string dataDir;  // dónde van tus archivos del juego (vacío si no hacen falta)
+    std::string manifest; // lista "sha256 tamaño ruta" que trae el port, para comprobar tu copia
     bool needsData = false;
     std::string installedVer; // vacío si no está instalado; "?" si está pero sin registro
 };

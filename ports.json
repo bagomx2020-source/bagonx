@@ -1,5 +1,5 @@
 {
-  "_info": "Catálogo de ports de BagoNX. Solo motores y juegos libres de GitHub, sacados de https://github.com/robzilla10001/SwitchPorts. La app descarga siempre la última release de cada repositorio. type: nro (se copia en dest) o zip (se extrae en dest). needs_data: el usuario pone los archivos de su copia original del juego.",
+  "_info": "Catálogo de ports de BagoNX. Solo motores y juegos libres de GitHub, sacados de https://github.com/robzilla10001/SwitchPorts. La app descarga siempre la última release de cada repositorio. type: nro (se copia en dest) o zip (se extrae en dest). needs_data: el usuario pone los archivos de su copia original del juego. data_dir: carpeta donde BagoNX copia tus archivos del juego desde tu PC (Mis juegos, red local); la carpeta del PC debe llamarse como el id o el título del port. manifest: lista sha256/tamaño/ruta que trae el port para comprobar tu copia.",
   "ports": [
     {
       "id": "supermariowar",
@@ -90,7 +90,8 @@
       "dest": "sdmc:/switch/fheroes2/",
       "check": "sdmc:/switch/fheroes2/fheroes2.nro",
       "needs_data": true,
-      "desc": "Motor libre de Heroes II. Copia las carpetas ANIM, DATA, MAPS y MUSIC de tu juego original en /switch/fheroes2/."
+      "desc": "Motor libre de Heroes II. Copia las carpetas ANIM, DATA, MAPS y MUSIC de tu juego original en /switch/fheroes2/.",
+      "data_dir": "sdmc:/switch/fheroes2/"
     },
     {
       "id": "jazz2",
@@ -103,7 +104,8 @@
       "dest": "sdmc:/switch/jazz2/",
       "check": "sdmc:/switch/jazz2/Jazz2.nro",
       "needs_data": true,
-      "desc": "Reimplementación libre del motor. Copia el contenido de tu Jazz Jackrabbit 2 original (sirve la versión shareware) en /Games/Jazz2/Source/ y ábrelo con toda la memoria."
+      "desc": "Reimplementación libre del motor. Copia el contenido de tu Jazz Jackrabbit 2 original (sirve la versión shareware) en /Games/Jazz2/Source/ y ábrelo con toda la memoria.",
+      "data_dir": "sdmc:/Games/Jazz2/Source/"
     },
     {
       "id": "quakespasm",
@@ -116,7 +118,8 @@
       "dest": "sdmc:/switch/quakespasm/quakespasmnx.nro",
       "check": "sdmc:/switch/quakespasm/quakespasmnx.nro",
       "needs_data": true,
-      "desc": "Motor de Quake. Copia la carpeta id1 de tu juego (sirve la shareware con pak0.pak) en /switch/quakespasm/id1/."
+      "desc": "Motor de Quake. Copia la carpeta id1 de tu juego (sirve la shareware con pak0.pak) en /switch/quakespasm/id1/.",
+      "data_dir": "sdmc:/switch/quakespasm/id1/"
     },
     {
       "id": "manhunt1",
@@ -129,7 +132,9 @@
       "dest": "sdmc:/",
       "check": "sdmc:/switch/manhunt1_nx/manhunt.nro",
       "needs_data": true,
-      "desc": "Recompilación nativa del Manhunt de Xbox. Copia DEFAULT.xbe y las carpetas audio y levels de tu copia original en /switch/manhunt1_nx/game/. Ábrelo con R pulsado sobre un juego (necesita toda la memoria). Para salir: ZL + ZR + Más + Menos durante 1,5 s."
+      "desc": "Recompilación nativa del Manhunt de Xbox. Copia DEFAULT.xbe y las carpetas audio y levels de tu copia original en /switch/manhunt1_nx/game/. Ábrelo con R pulsado sobre un juego (necesita toda la memoria). Para salir: ZL + ZR + Más + Menos durante 1,5 s.",
+      "data_dir": "sdmc:/switch/manhunt1_nx/game/",
+      "manifest": "sdmc:/switch/manhunt1_nx/asset-manifest.sha256"
     }
   ]
 }

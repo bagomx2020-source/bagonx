@@ -14,6 +14,7 @@
 #include "config.hpp"
 #include "gfx.hpp"
 #include "i18n.hpp"
+#include "lan.hpp"
 #include "ports.hpp"
 #include "store.hpp"
 #include "task.hpp"
@@ -390,6 +391,120 @@ void openPort(size_t idx) {
                {[idx] { installPort(idx); }, nullptr});
 }
 
+// ---------------------------------------------------------------- mis juegos (red local)
+std::vector<lan::Game> g_lanGames;
+int g_lanState = STORE_IDLE;
+
+bool askText(const char* guide, const std::string& initial, std::string& out, bool numeric) {
+    SwkbdConfig kbd;
+    if (R_FAILED(swkbdCreate(&kbd, 0))) return false;
+    swkbdConfigMakePresetDefault(&kbd);
+    if (numeric) {
+        swkbdConfigSetType(&kbd, SwkbdType_NumPad);
+        swkbdConfigSetStringLenMax(&kbd, 4);
+    }
+    swkbdConfigSetGuideText(&kbd, guide);
+    swkbdConfigSetInitialText(&kbd, initial.c_str());
+    char buf[128] = {0};
+    Result rc = swkbdShow(&kbd, buf, sizeof buf);
+    swkbdClose(&kbd);
+    if (R_FAILED(rc)) return false;
+    out = util::trim(buf);
+    return true;
+}
+
+// El port al que van los archivos: la carpeta del PC se llama como su id o su título.
+int portForGame(const lan::Game& g) {
+    std::string n = util::lower(g.name);
+    for (size_t i = 0; i < g_ports.size(); i++) {
+        const ports::Port& p = g_ports[i];
+        if (p.dataDir.empty()) continue;
+        if (n == util::lower(p.id) || n == util::lower(p.title)) return (int)i;
+    }
+    return -1;
+}
+
+void loadLan() {
+    if (g_task) return;
+    g_lanState = STORE_LOADING;
+    auto result = std::make_shared<std::vector<lan::Game>>();
+    std::string addr = cfg().pcAddr, pin = cfg().pcPin;
+    startTask(tr("lan_loading"),
+              [result, addr, pin](TaskCtx& c, std::string& m) {
+                  c.setStatus(util::fmt(tr("lan_loading_at"), lan::baseUrl(addr)));
+                  return lan::list(addr, pin, *result, m);
+              },
+              [result](bool ok, const std::string& m) {
+                  if (ok) { g_lanGames = std::move(*result); g_lanState = STORE_OK; }
+                  else { g_lanState = STORE_IDLE; showMessage(tr("error"), m); }
+                  g_dirty = true;
+              });
+}
+
+void copyLanGame(size_t gi, size_t pi) {
+    lan::Game g = g_lanGames[gi];
+    std::string dest = g_ports[pi].dataDir, addr = cfg().pcAddr, pin = cfg().pcPin;
+    startTask(g.name, [g, dest, addr, pin](TaskCtx& c, std::string& m) {
+                  return lan::copyGame(addr, pin, g, dest, c, m);
+              },
+              [](bool ok, const std::string& m) {
+                  refreshSys();
+                  g_dirty = true;
+                  showMessage(ok ? tr("done") : tr("error"), m);
+              });
+}
+
+void openLanGame(size_t gi) {
+    const lan::Game& g = g_lanGames[gi];
+    int pi = portForGame(g);
+    if (pi < 0) {
+        std::string names;
+        for (auto& p : g_ports)
+            if (!p.dataDir.empty()) names += (names.empty() ? "" : ", ") + p.title;
+        showMessage(g.name, util::fmt(tr("lan_no_port"), g.name) + "\n\n" + names);
+        return;
+    }
+    const ports::Port& p = g_ports[pi];
+    std::string body = std::string(tr("size")) + ": " + util::humanSize(g.size) + "  ·  " +
+                       util::fmt(tr("lan_files"), std::to_string(g.files.size())) + "\n" +
+                       tr("lan_dest") + ": " + p.dataDir.substr(5) + "\n\n";
+    lan::Check ck = lan::checkManifest(g, p.manifest);
+    if (ck.hasManifest) {
+        body += std::string(tr("lan_check")) + " " + std::to_string(ck.ok) + " " + tr("lan_ok") + ", " +
+                std::to_string(ck.different) + " " + tr("lan_diff") + ", " + std::to_string(ck.missing) + " " +
+                tr("lan_missing") + ", " + std::to_string(ck.extra) + " " + tr("lan_extra") + ".\n";
+        body += (ck.different || ck.missing) ? tr("lan_mismatch") : tr("lan_match");
+    } else if (!p.manifest.empty()) {
+        body += tr("lan_nomanifest");
+    }
+    if (p.installedVer.empty()) body += std::string("\n\n") + util::fmt(tr("lan_install_hint"), p.title);
+    showDialog(g.name + "  →  " + p.title, body, {tr("lan_copy"), tr("cancel")},
+               {[gi, pi] { copyLanGame(gi, (size_t)pi); }, nullptr});
+}
+
+void buildLan() {
+    const Theme& t = T();
+    addHeader(tr("lan_hdr"));
+    addAction(tr("lan_addr"), tr("lan_addr_sub"), [] {
+        std::string v;
+        if (askText(tr("lan_addr_guide"), cfg().pcAddr, v, false)) { cfg().pcAddr = v; cfgSave(); g_dirty = true; }
+    }, cfg().pcAddr.empty() ? tr("lan_not_set") : cfg().pcAddr, cfg().pcAddr.empty() ? t.warn : Color{0, 0, 0, 0});
+    addAction(tr("lan_pin"), "", [] {
+        std::string v;
+        if (askText(tr("lan_pin_guide"), cfg().pcPin, v, true)) { cfg().pcPin = v; cfgSave(); g_dirty = true; }
+    }, cfg().pcPin.empty() ? tr("lan_not_set") : "••••", cfg().pcPin.empty() ? t.warn : Color{0, 0, 0, 0});
+    addAction(tr("lan_search"), tr("lan_search_sub"), [] { loadLan(); });
+    if (g_lanState != STORE_OK) return;
+    if (g_lanGames.empty()) { addInfo(tr("lan_empty"), ""); return; }
+    for (size_t i = 0; i < g_lanGames.size(); i++) {
+        const lan::Game& g = g_lanGames[i];
+        int pi = portForGame(g);
+        std::string sub = util::fmt(tr("lan_files"), std::to_string(g.files.size())) + "  ·  " +
+                          (pi >= 0 ? util::fmt(tr("lan_for_port"), g_ports[pi].title) : std::string(tr("lan_no_port_short")));
+        addAction(g.name, sub, [i] { openLanGame(i); }, util::humanSize(g.size), pi >= 0 ? t.ok : t.warn);
+    }
+}
+
 void buildPorts() {
     const Theme& t = T();
     if (g_portsState == STORE_IDLE) loadPorts();
@@ -400,6 +515,7 @@ void buildPorts() {
         return;
     }
     if (g_portsState != STORE_OK) return;
+    buildLan();
     for (int pass = 0; pass < 2; pass++) {
         bool data = pass == 1;
         bool header = false;

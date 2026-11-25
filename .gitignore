@@ -4,3 +4,6 @@ build/
 *.elf
 *.map
 Manhunt/
+juegos/
+pc/pin.txt
+pc/hash_cache.json

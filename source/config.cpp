@@ -14,6 +14,8 @@ void cfgLoad() {
         g_cfg.theme = v["theme"].str(g_cfg.theme);
         std::string repo = v["update_repo"].str();
         if (!repo.empty()) g_cfg.updateRepo = repo;
+        g_cfg.pcAddr = v["pc_address"].str();
+        g_cfg.pcPin = v["pc_pin"].str();
         if (v["auto_update"].type == json::Value::Bool) g_cfg.autoUpdate = v["auto_update"].b;
     } else {
         cfgSave();
@@ -25,6 +27,8 @@ void cfgSave() {
     s += "  \"language\": \"" + json::escape(g_cfg.lang) + "\",\n";
     s += "  \"theme\": \"" + json::escape(g_cfg.theme) + "\",\n";
     s += "  \"update_repo\": \"" + json::escape(g_cfg.updateRepo) + "\",\n";
+    s += "  \"pc_address\": \"" + json::escape(g_cfg.pcAddr) + "\",\n";
+    s += "  \"pc_pin\": \"" + json::escape(g_cfg.pcPin) + "\",\n";
     s += std::string("  \"auto_update\": ") + (g_cfg.autoUpdate ? "true" : "false") + "\n";
     s += "}\n";
     util::writeFile(CONFIG_PATH, s);

@@ -53,10 +53,14 @@ bool fetch(const std::string& repo, std::vector<Port>& out, std::string& err) {
         p.dest = j["dest"].str();
         p.check = j["check"].str();
         p.desc = j["desc"].str();
+        p.dataDir = j["data_dir"].str();
+        p.manifest = j["manifest"].str();
         p.needsData = j["needs_data"].type == json::Value::Bool && j["needs_data"].b;
         if (p.id.empty() || p.id.find('/') != std::string::npos || p.id.find("..") != std::string::npos) continue;
         if (p.repo.empty() || p.asset.empty() || (p.type != "nro" && p.type != "zip")) continue;
         if (!safePath(p.dest) || (!p.check.empty() && !safePath(p.check))) continue;
+        if (!p.dataDir.empty() && !safePath(p.dataDir)) p.dataDir.clear();
+        if (!p.manifest.empty() && !safePath(p.manifest)) p.manifest.clear();
         out.push_back(std::move(p));
     }
     refreshInstalled(out);
