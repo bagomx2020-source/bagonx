@@ -7,7 +7,8 @@ Gestor todo en uno para Nintendo Switch con homebrew, escrito desde cero en C++ 
 - **CFW**: descarga e instala la última versión de Atmosphère (con `fusee.bin`) y de Hekate desde sus GitHub oficiales. Copia Hekate como `reboot_payload.bin` y nunca toca tu `hekate_ipl.ini`. También tiene un botón para reiniciar la consola.
 - **Apps**: tienda con el catálogo público de la Homebrew App Store. Puedes filtrar por categoría (X), buscar con el teclado (Y), y instalar, actualizar o desinstalar apps. Registra las apps en el mismo sitio que la App Store (`/switch/appstore/.get/packages/`), así que las dos apps reconocen lo que instaló la otra.
 - **Ports**: juegos y motores libres sacados de [SwitchPorts](https://github.com/robzilla10001/SwitchPorts). La lista está en `ports.json` de este repositorio, así que se pueden añadir ports sin recompilar. Cada port se descarga de la última release de su propio GitHub. Los que dicen "necesita tus archivos" solo traen el motor: tienes que copiar los datos de tu juego original.
-- **Ajustes**: idioma español/inglés, tema oscuro/claro y autoactualización desde las releases de tu repositorio de GitHub.
+- **Ajustes**: idioma español/inglés y tema oscuro/claro.
+- **Autoactualización**: al abrirse, la app mira en segundo plano si hay una release nueva en GitHub. Si la hay, avisa, descarga el nuevo `.nro` sobre el actual y ofrece reiniciarse ya actualizada, sin tener que reinstalar nada. El aviso se puede desactivar en Ajustes, y en Ajustes y Acerca de siempre está la opción de buscar a mano.
 - **Acerca de**: muestra el firmware, la versión de Atmosphère en uso, el espacio libre en la microSD y si la app corre en modo applet o aplicación.
 
 Controles: L/R cambian de pestaña, A elige, B vuelve atrás y + sale.

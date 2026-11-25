@@ -418,6 +418,80 @@ void buildPorts() {
     if (g_items.empty()) addInfo(tr("no_results"), "");
 }
 
+// ---------------------------------------------------------------- autoactualización
+// Resultado de la comprobación silenciosa al arrancar (hilo aparte, sin ventana).
+struct BgCheck {
+    pthread_t thread;
+    bool started = false;
+    std::atomic<bool> finished{false};
+    bool ok = false;
+    std::string repo, tag, url, msg;
+    TaskCtx ctx;
+};
+BgCheck g_bg;
+bool g_updAvail = false;
+std::string g_updTag, g_updUrl;
+bool g_updPrompted = false;
+
+void* bgEntry(void*) {
+    g_bg.ok = updater::check(g_bg.repo, g_bg.tag, g_bg.url, g_bg.ctx, g_bg.msg);
+    g_bg.finished = true;
+    return nullptr;
+}
+
+void startBgCheck() {
+    if (!cfg().autoUpdate || cfg().updateRepo.empty()) return;
+    g_bg.repo = cfg().updateRepo;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, 512 * 1024);
+    g_bg.started = pthread_create(&g_bg.thread, &attr, bgEntry, nullptr) == 0;
+    pthread_attr_destroy(&attr);
+}
+
+void setUpdate(const std::string& tag, const std::string& url) {
+    g_updAvail = !url.empty() && util::versionCompare(tag, APP_VERSION) > 0;
+    if (g_updAvail) { g_updTag = tag; g_updUrl = url; }
+    g_dirty = true;
+}
+
+void restartApp() {
+    // Con el Homebrew Menu, pide que al salir se vuelva a abrir este mismo .nro
+    if (envHasNextLoad()) envSetNextLoad(g_nroPath.c_str(), g_nroPath.c_str());
+    g_running = false;
+}
+
+void applyUpdate() {
+    std::string url = g_updUrl, tag = g_updTag;
+    startTask(std::string(APP_TITLE " ") + tag,
+              [url](TaskCtx& c, std::string& m) { return updater::apply(url, g_nroPath, c, m); },
+              [tag](bool ok, const std::string& m) {
+                  if (!ok) { showMessage(tr("error"), m); return; }
+                  g_updAvail = false;
+                  g_dirty = true;
+                  if (envHasNextLoad())
+                      showDialog(tr("updates"), util::fmt(tr("update_done_restart"), tag),
+                                 {tr("restart_now"), tr("later")}, {[] { restartApp(); }, nullptr});
+                  else
+                      showMessage(tr("updates"), tr("update_done"));
+              });
+}
+
+void promptUpdate() {
+    g_updPrompted = true;
+    showDialog(tr("updates"), util::fmt(tr("new_version"), g_updTag), {tr("update_now"), tr("later")},
+               {[] { applyUpdate(); }, nullptr});
+}
+
+void pollBgCheck() {
+    if (g_bg.started && g_bg.finished) {
+        pthread_join(g_bg.thread, nullptr);
+        g_bg.started = false;
+        if (g_bg.ok) setUpdate(g_bg.tag, g_bg.url);
+    }
+    if (g_updAvail && !g_updPrompted && !g_task && !g_dlg.open) promptUpdate();
+}
+
 void checkUpdate() {
     std::string repo = cfg().updateRepo;
     if (repo.empty()) { showMessage(tr("updates"), tr("repo_not_set")); return; }
@@ -432,15 +506,8 @@ void checkUpdate() {
                       return;
                   }
                   if (url->empty()) { showMessage(tr("error"), util::fmt(tr("no_asset"), *tag)); return; }
-                  showDialog(tr("updates"), util::fmt(tr("new_version"), *tag), {tr("yes"), tr("no")},
-                             {[url] {
-                                  startTask(APP_TITLE,
-                                            [url](TaskCtx& c, std::string& m) {
-                                                return updater::apply(*url, g_nroPath, c, m);
-                                            },
-                                            nullptr);
-                              },
-                              nullptr});
+                  setUpdate(*tag, *url);
+                  promptUpdate();
               });
 }
 
@@ -457,6 +524,14 @@ void buildSettings() {
         g_dirty = true;
     }, cfg().theme == "dark" ? tr("theme_dark") : tr("theme_light"));
     addHeader(tr("updates"));
+    if (g_updAvail)
+        addAction(util::fmt(tr("update_to"), g_updTag), tr("update_to_sub"), [] { applyUpdate(); },
+                  tr("new_badge"), T().warn);
+    addAction(tr("auto_update"), tr("auto_update_sub"), [] {
+        cfg().autoUpdate = !cfg().autoUpdate;
+        cfgSave();
+        g_dirty = true;
+    }, cfg().autoUpdate ? tr("on") : tr("off"));
     addAction(tr("check_update"), util::fmt(tr("repo"), cfg().updateRepo.empty() ? "—" : cfg().updateRepo),
               [] { checkUpdate(); });
     addHeader(tr("help"));
@@ -466,6 +541,11 @@ void buildSettings() {
 void buildAbout() {
     const Theme& t = T();
     addInfo(APP_TITLE, "v" APP_VERSION, t.accent);
+    if (g_updAvail)
+        addAction(util::fmt(tr("update_to"), g_updTag), tr("update_to_sub"), [] { applyUpdate(); },
+                  tr("new_badge"), t.warn);
+    else
+        addAction(tr("check_update"), "", [] { checkUpdate(); });
     addInfo(tr("mode"), g_sys.applet ? tr("mode_applet") : tr("mode_app"), g_sys.applet ? t.warn : t.ok);
     addInfo(tr("sd_free"), g_sys.sdFree);
     addInfo(tr("firmware"), g_sys.fw);
@@ -585,6 +665,7 @@ void drawSidebar() {
     gfx::rect(0, 0, 300, 720, t.side);
     gfx::text(APP_TITLE, 34, 34, 38, t.accent);
     gfx::text("v" APP_VERSION, 36, 84, 18, t.sub);
+    if (g_updAvail) gfx::text(util::fmt(tr("update_badge"), g_updTag), 36, 106, 16, t.warn, gfx::Left, 250);
     const char* tabs[TAB_COUNT] = {tr("tab_cfw"), tr("tab_apps"), tr("tab_ports"), tr("tab_settings"), tr("tab_about")};
     for (int i = 0; i < TAB_COUNT; i++) {
         int y = 140 + i * 62;
@@ -767,6 +848,7 @@ void appRun(const char* argv0) {
     g_nroPath = (argv0 && util::startsWith(argv0, "sdmc:/")) ? argv0 : "sdmc:/switch/bagonx/bagonx.nro";
     padInitializeDefault(&g_pad);
     refreshSys();
+    startBgCheck();
 
     while (g_running && appletMainLoop()) {
         SDL_Event e;
@@ -775,6 +857,7 @@ void appRun(const char* argv0) {
 
         uint32_t k = readInput();
         pollTask();
+        pollBgCheck();
         if (g_task) {
             if (k & K_B) g_task->ctx.cancel = true;
         } else if (g_dlg.open) {
@@ -793,4 +876,5 @@ void appRun(const char* argv0) {
         g_task.reset();
         appletSetMediaPlaybackState(false);
     }
+    if (g_bg.started) pthread_join(g_bg.thread, nullptr);
 }

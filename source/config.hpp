@@ -13,6 +13,7 @@ struct Config {
     std::string lang = "es";
     std::string theme = "dark";
     std::string updateRepo = DEFAULT_UPDATE_REPO; // "usuario/repositorio" en GitHub
+    bool autoUpdate = true;                       // comprobar al arrancar
 };
 
 Config& cfg();
