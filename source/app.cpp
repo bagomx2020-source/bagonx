@@ -3,8 +3,10 @@
 #include <SDL2/SDL.h>
 #include <pthread.h>
 #include <sys/statvfs.h>
+#include <dirent.h>
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <string>
@@ -379,6 +381,37 @@ void installPort(size_t idx) {
               });
 }
 
+// true si la carpeta existe y tiene algo dentro
+bool dirHasFiles(const std::string& dir) {
+    DIR* d = opendir(dir.c_str());
+    if (!d) return false;
+    bool any = false;
+    while (dirent* e = readdir(d))
+        if (strcmp(e->d_name, ".") && strcmp(e->d_name, "..")) { any = true; break; }
+    closedir(d);
+    return any;
+}
+
+// Cierra BagoNX y abre el .nro del port (el Homebrew Menu lo carga al salir).
+void launchPort(const std::string& nro) {
+    if (!envHasNextLoad()) { showMessage(tr("error"), tr("play_no_loader")); return; }
+    std::string argv = "\"" + nro + "\""; // entre comillas: hay ports con espacios en la ruta
+    envSetNextLoad(nro.c_str(), argv.c_str());
+    g_running = false;
+}
+
+void playPort(size_t idx) {
+    const ports::Port& p = g_ports[idx];
+    std::string nro = p.check;
+    if (nro.empty() || !util::exists(nro)) { showMessage(tr("error"), util::fmt(tr("play_missing"), nro)); return; }
+    std::string warn;
+    if (p.needsData && !p.dataDir.empty() && !dirHasFiles(p.dataDir))
+        warn += util::fmt(tr("play_no_data"), p.dataDir.substr(5)) + "\n\n";
+    if (g_sys.applet) warn += std::string(tr("play_applet")) + "\n\n";
+    if (warn.empty()) { launchPort(nro); return; }
+    showDialog(p.title, warn + tr("play_anyway"), {tr("play"), tr("cancel")}, {[nro] { launchPort(nro); }, nullptr});
+}
+
 void openPort(size_t idx) {
     const ports::Port& p = g_ports[idx];
     std::string body = p.desc;
@@ -386,9 +419,17 @@ void openPort(size_t idx) {
     body += "\n\n" + std::string(tr("port_source")) + ": github.com/" + p.repo;
     bool installed = !p.installedVer.empty();
     if (installed) body += "\n" + std::string(tr("port_installed")) + ": " + p.installedVer;
-    showDialog(p.title + "  ·  " + p.author, body,
-               {installed ? tr("update") : tr("install"), tr("cancel")},
-               {[idx] { installPort(idx); }, nullptr});
+    std::vector<std::string> b;
+    std::vector<std::function<void()>> a;
+    if (installed && !p.check.empty()) {
+        b.push_back(tr("play"));
+        a.push_back([idx] { playPort(idx); });
+    }
+    b.push_back(installed ? tr("update") : tr("install"));
+    a.push_back([idx] { installPort(idx); });
+    b.push_back(tr("cancel"));
+    a.push_back(nullptr);
+    showDialog(p.title + "  ·  " + p.author, body, b, a);
 }
 
 // ---------------------------------------------------------------- mis juegos (red local)

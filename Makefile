@@ -13,7 +13,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #---------------------------------------------------------------------------------
 APP_TITLE   := BagoNX
 APP_AUTHOR  := BagoTech
-APP_VERSION := 1.2.0
+APP_VERSION := 1.2.1
 # Repositorio de GitHub para la autoactualización, p. ej. usuario/bagonx
 UPDATE_REPO :=
 
