@@ -127,7 +127,7 @@
       "system": "Xbox",
       "author": "marmota94",
       "repo": "marmota94/manhunt1_nx",
-      "asset": "manhunt1-nx-v*.zip",
+      "asset": "manhunt1-nx-v*0.zip",
       "type": "zip",
       "dest": "sdmc:/",
       "check": "sdmc:/switch/manhunt1_nx/manhunt.nro",

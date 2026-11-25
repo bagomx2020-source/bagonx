@@ -84,8 +84,17 @@ bool install(const Port& p, TaskCtx& c, std::string& msg) {
     if (!net::githubLatest(p.repo, r, err)) return fail(c, msg, err);
 
     std::string name, url;
-    for (auto& a : r.assets)
-        if (glob(p.asset.c_str(), a.first.c_str())) { name = a.first; url = a.second; break; }
+    // Muchas releases traen también un zip con el código fuente que encaja con el
+    // mismo patrón: se ignora salvo que el patrón lo pida expresamente.
+    bool wantSource = util::lower(p.asset).find("source") != std::string::npos;
+    for (auto& a : r.assets) {
+        if (!glob(p.asset.c_str(), a.first.c_str())) continue;
+        std::string n = util::lower(a.first);
+        if (!wantSource && (n.find("source") != std::string::npos || n.find("-src") != std::string::npos)) continue;
+        name = a.first;
+        url = a.second;
+        break;
+    }
     if (url.empty()) { msg = util::fmt(tr("no_asset"), r.tag); return false; }
 
     c.reset();
